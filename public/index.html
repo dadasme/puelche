@@ -46,6 +46,18 @@
   .credit .by b { font-size: 12px; font-family: 'Electrolize', system-ui, sans-serif; color: #1a3a5c; }
   .credit a { color: #5a2da0; text-decoration: none; }
   .credit a:hover { text-decoration: underline; }
+  /* Menús desplegables (mapa base + capas) */
+  .menu-box { display: flex; flex-direction: column; gap: 6px; }
+  .menu { background: rgba(255,255,255,0.95); border-radius: 8px; box-shadow: 0 1px 5px rgba(0,0,0,0.25); overflow: hidden; width: 210px; }
+  .menu-head { width: 100%; border: none; background: #1a3a5c; color: #fff; font-weight: 700;
+    font-size: 12px; padding: 7px 10px; cursor: pointer; text-align: left;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'Electrolize', system-ui, sans-serif; }
+  .menu-head .chev { transition: transform 0.2s; }
+  .menu-body { display: none; padding: 6px 10px; max-height: 40vh; overflow-y: auto; }
+  .menu-body.open { display: block; }
+  .menu-body label { display: flex; align-items: center; gap: 6px; font-size: 12px; margin: 5px 0; cursor: pointer; }
+  .menu-body input { cursor: pointer; }
   #panelToggle { display: none; }
   /* Forzar Electrolize en los componentes que Leaflet dibuja aparte */
   .leaflet-container, .leaflet-popup-content, .leaflet-control-layers,
@@ -155,14 +167,83 @@ const pressureLayer = L.layerGroup();            // presión
 const rainLayer = L.layerGroup();                // lluvia
 const tempLayer = L.layerGroup();                // temperatura
 
-const layerControl = L.control.layers(baseMaps, {
+// --- Controles desplegables: Mapa base y Capas meteorológicas ---
+const overlays = {
+  "🌀 Animación de viento": null, // se asigna cuando se crea velLayer
   "🌐 Flechas del modelo": fieldLayer,
   "🌬️ Estaciones reales": windLayer,
   "🌪️ Ráfagas >40 km/h": gustLayer,
   "🔻 Presión (hPa)": pressureLayer,
   "🌧️ Lluvia (mm/h)": rainLayer,
   "🌡️ Temperatura (°C)": tempLayer,
-}, { collapsed: false, position: "bottomright" }).addTo(map);
+};
+let animacionOn = true; // la animación arranca activa
+
+const ControlsBox = L.Control.extend({
+  options: { position: "bottomright" },
+  onAdd() {
+    const box = L.DomUtil.create("div", "menu-box");
+    L.DomEvent.disableClickPropagation(box);
+    L.DomEvent.disableScrollPropagation(box);
+
+    // --- Menú 1: Mapa base (radio) ---
+    let baseRows = "";
+    Object.keys(baseMaps).forEach((name, i) => {
+      const checked = i === 0 ? "checked" : "";
+      baseRows += `<label><input type="radio" name="basemap" value="${name}" ${checked}> ${name}</label>`;
+    });
+    // --- Menú 2: Capas meteorológicas (checkbox) ---
+    let ovRows = "";
+    Object.keys(overlays).forEach((name) => {
+      const lyr = overlays[name];
+      const isAnim = name === "🌀 Animación de viento";
+      const on = isAnim ? (animacionOn ? "checked" : "") : (lyr && map.hasLayer(lyr) ? "checked" : "");
+      ovRows += `<label><input type="checkbox" name="overlay" value="${name}" ${on}> ${name}</label>`;
+    });
+
+    box.innerHTML = `
+      <div class="menu">
+        <button class="menu-head" data-target="baseMenu">🗺️ Mapa base <span class="chev">▾</span></button>
+        <div class="menu-body" id="baseMenu">${baseRows}</div>
+      </div>
+      <div class="menu">
+        <button class="menu-head" data-target="ovMenu">📊 Capas <span class="chev">▾</span></button>
+        <div class="menu-body open" id="ovMenu">${ovRows}</div>
+      </div>`;
+
+    // Abrir/cerrar menús
+    box.querySelectorAll(".menu-head").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const body = box.querySelector("#" + btn.dataset.target);
+        body.classList.toggle("open");
+        btn.querySelector(".chev").style.transform = body.classList.contains("open") ? "rotate(180deg)" : "";
+      });
+    });
+    // Cambiar mapa base
+    box.querySelectorAll('input[name="basemap"]').forEach(inp => {
+      inp.addEventListener("change", () => {
+        Object.values(baseMaps).forEach(l => map.removeLayer(l));
+        baseMaps[inp.value].addTo(map);
+        if (velLayer) velLayer.bringToFront();
+      });
+    });
+    // Activar/desactivar capas
+    box.querySelectorAll('input[name="overlay"]').forEach(inp => {
+      inp.addEventListener("change", () => {
+        if (inp.value === "🌀 Animación de viento") {
+          animacionOn = inp.checked;
+          if (velLayer) { if (inp.checked) velLayer.addTo(map); else map.removeLayer(velLayer); }
+          return;
+        }
+        const layer = overlays[inp.value];
+        if (!layer) return;
+        if (inp.checked) map.addLayer(layer); else map.removeLayer(layer);
+      });
+    });
+    return box;
+  },
+});
+const layerControl = new ControlsBox().addTo(map);
 
 // --- Navegación rápida por región ---
 function goRegion(r) {
@@ -314,8 +395,8 @@ async function loadVelocity() {
       maxVelocity: 15,        // m/s para la escala de color
       velocityScale: 0.01,    // tamaño del movimiento de las partículas
     });
-    velLayer.addTo(map);
-    layerControl.addOverlay(velLayer, "🌀 Animación de viento");
+    overlays["🌀 Animación de viento"] = velLayer;
+    if (animacionOn) velLayer.addTo(map);
   } catch (e) { /* opcional: si falla, el resto del mapa sigue */ }
 }
 
