@@ -134,10 +134,18 @@
 <script>
 const map = L.map("map", { attributionControl: false }).setView([-33.65, -70.95], 8);
 L.control.attribution({ position: "bottomleft" }).addTo(map);
-L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-  attribution: '&copy; OpenStreetMap | Estaciones: Weather Underground PWS | Modelo: Open-Meteo',
-  maxZoom: 18,
-}).addTo(map);
+
+// --- Mapas base seleccionables ---
+const ATTR = '&copy; OpenStreetMap, &copy; CARTO | Estaciones: Weather Underground PWS | Modelo: Open-Meteo';
+const baseMaps = {
+  "Limpio claro (sin nombres)": L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png", { attribution: ATTR, subdomains: "abcd", maxZoom: 19 }),
+  "Limpio claro (con nombres)": L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png", { attribution: ATTR, subdomains: "abcd", maxZoom: 19 }),
+  "Con color (Voyager)": L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png", { attribution: ATTR, subdomains: "abcd", maxZoom: 19 }),
+  "Oscuro (modo noche)": L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png", { attribution: ATTR, subdomains: "abcd", maxZoom: 19 }),
+  "Detallado (OpenStreetMap)": L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: ATTR, maxZoom: 19 }),
+};
+// Mapa por defecto: limpio claro sin nombres
+baseMaps["Limpio claro (sin nombres)"].addTo(map);
 
 // --- Capas activables ---
 const fieldLayer = L.layerGroup();               // flechas del modelo (opcional)
@@ -147,7 +155,7 @@ const pressureLayer = L.layerGroup();            // presión
 const rainLayer = L.layerGroup();                // lluvia
 const tempLayer = L.layerGroup();                // temperatura
 
-const layerControl = L.control.layers(null, {
+const layerControl = L.control.layers(baseMaps, {
   "🌐 Flechas del modelo": fieldLayer,
   "🌬️ Estaciones reales": windLayer,
   "🌪️ Ráfagas >40 km/h": gustLayer,
