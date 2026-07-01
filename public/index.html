@@ -89,8 +89,8 @@
     background-repeat: no-repeat; background-position: right 10px center; padding-right: 28px; }
   .region-select optgroup { font-style: normal; }
 
-  /* Header tech compacto (no ocupa todo el ancho) */
-  .topglass { position: absolute; top: 10px; left: 10px; z-index: 1001;
+  /* Header tech compacto (a la derecha de los controles de zoom) */
+  .topglass { position: absolute; top: 10px; left: 58px; z-index: 1001;
     border-radius: 14px; padding: 7px 12px; display: flex; align-items: center; gap: 9px; }
   .topglass .tlogo { width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0; }
   .topglass .tbrand { font-family: 'Electrolize'; font-size: 15px; font-weight: 700; letter-spacing: .6px; color: var(--text-main); }
@@ -101,7 +101,7 @@
     background: var(--toggle-bg); color: var(--text-soft); font-size: 14px; display: flex; align-items: center; justify-content: center; }
 
   .credit {
-    position: absolute; top: 66px; left: 8px; bottom: auto; right: auto; z-index: 1000;
+    position: absolute; bottom: 28px; left: 8px; top: auto; right: auto; z-index: 1000;
     border-radius: 12px; padding: 6px 10px 6px 6px; display: flex; align-items: center; gap: 8px;
     font-size: 11px; color: var(--text-soft);
   }
@@ -141,8 +141,9 @@
   .leaflet-popup-tip { background: var(--glass-bg) !important; }
   /* === Adaptación a móvil === */
   @media (max-width: 640px) {
+    .topglass { top: 6px; left: 6px; right: 6px; justify-content: center; }
     .panel {
-      top: 4px; left: 6px; right: 6px; max-width: none;
+      top: 52px; left: 6px; right: 6px; max-width: none;
       padding: 6px 10px;
     }
     .brand { margin-bottom: 0; gap: 8px; }
@@ -203,32 +204,34 @@
 </div>
 <div class="panel glass">
   <div class="brand">
-    <div class="muted brand-sub">Monitor de viento en vivo · Valparaíso · Metropolitana · O'Higgins</div>
+    <div class="muted brand-sub">Monitor de viento en vivo · Chile</div>
     <button id="panelToggle" aria-label="Mostrar/ocultar detalles">▾</button>
   </div>
   <div class="panel-body" id="panelBody">
   <div class="region-wrap">
     <select id="regionSelect" class="region-select" onchange="goRegion(this.value)">
-      <option value="todo">📍 Todo Chile central</option>
-      <optgroup label="Con datos">
+      <option value="chile">📍 Todo Chile</option>
+      <optgroup label="Norte">
+        <option value="arica">Arica y Parinacota</option>
+        <option value="tarapaca">Tarapacá</option>
+        <option value="antofagasta">Antofagasta</option>
+        <option value="atacama">Atacama</option>
+        <option value="coquimbo">Coquimbo</option>
+      </optgroup>
+      <optgroup label="Centro">
         <option value="valpo">Valparaíso</option>
         <option value="rm" selected>Región Metropolitana</option>
         <option value="ohiggins">O'Higgins</option>
+        <option value="maule">Maule</option>
+        <option value="nuble">Ñuble</option>
+        <option value="biobio">Biobío</option>
       </optgroup>
-      <optgroup label="Próximamente">
-        <option value="" disabled>Arica y Parinacota ⏳</option>
-        <option value="" disabled>Tarapacá ⏳</option>
-        <option value="" disabled>Antofagasta ⏳</option>
-        <option value="" disabled>Atacama ⏳</option>
-        <option value="" disabled>Coquimbo ⏳</option>
-        <option value="" disabled>Maule ⏳</option>
-        <option value="" disabled>Ñuble ⏳</option>
-        <option value="" disabled>Biobío ⏳</option>
-        <option value="" disabled>La Araucanía ⏳</option>
-        <option value="" disabled>Los Ríos ⏳</option>
-        <option value="" disabled>Los Lagos ⏳</option>
-        <option value="" disabled>Aysén ⏳</option>
-        <option value="" disabled>Magallanes ⏳</option>
+      <optgroup label="Sur">
+        <option value="araucania">La Araucanía</option>
+        <option value="losrios">Los Ríos</option>
+        <option value="loslagos">Los Lagos</option>
+        <option value="aysen">Aysén</option>
+        <option value="magallanes">Magallanes</option>
       </optgroup>
     </select>
   </div>
@@ -354,9 +357,24 @@ const layerControl = new ControlsBox().addTo(map);
 // --- Navegación rápida por región ---
 function goRegion(r) {
   const views = {
+    chile: [[-38.0, -71.5], 5],
+    arica: [[-18.7, -69.8], 9],
+    tarapaca: [[-20.3, -69.5], 8],
+    antofagasta: [[-23.5, -69.5], 7],
+    atacama: [[-27.5, -70.3], 8],
+    coquimbo: [[-30.3, -71.0], 8],
     valpo: [[-32.95, -71.30], 9],
     rm: [[-33.50, -70.70], 10],
     ohiggins: [[-34.40, -71.00], 9],
+    maule: [[-35.5, -71.6], 8],
+    nuble: [[-36.6, -72.0], 9],
+    biobio: [[-37.3, -72.7], 8],
+    araucania: [[-38.8, -72.4], 8],
+    losrios: [[-39.9, -72.9], 9],
+    loslagos: [[-41.8, -73.2], 7],
+    aysen: [[-46.0, -72.7], 6],
+    magallanes: [[-53.0, -71.5], 6],
+    // compatibilidad con valor antiguo
     todo: [[-33.65, -70.95], 8],
   };
   const v = views[r];
